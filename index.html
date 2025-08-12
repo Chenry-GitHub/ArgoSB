@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ArgoSB一键命令生成器</title>
+  <style>
+    :root{--bg:#0b1020;--card:#121831;--ink:#e9edf7;--sub:#b7c1d9;--line:#263255;--acc:#4f7cff;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444}
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0b1020 0%,#0e1530 100%);color:var(--ink);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+    .wrap{max-width:1100px;margin:32px auto;padding:0 16px}
+    header {
+      /* 移除 text-align: center，使内部文本左对齐 */
+      margin-bottom:16px;
+    }
+    header h1 {
+      font-size:36px;
+      margin-bottom:6px;
+      text-align: center; /* 保持 h1 居中 */
+    }
+    header p {
+      margin:0;
+      font-size:14px;
+      color: var(--sub);
+      line-height: 1.6;
+      max-width: 400px; /* 限制 p 标签的最大宽度，使其更容易居中 */
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left; /* 确保 p 标签内的文本左对齐 */
+    }
+    header a {
+      color: var(--acc);
+      text-decoration: none;
+    }
+    header a:hover {
+      text-decoration: underline;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 16px;
+    }
+
+    @media (max-width: 980px) {
+      .grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+      }
+    }
+
+    .protocol-port { grid-column: 1; grid-row: 1 / 3; }
+    .outbound-warp { grid-column: 2; grid-row: 1; }
+    .argo-tunnel { grid-column: 2; grid-row: 2; }
+    .out { grid-column: 1 / 3; grid-row: 3; }
+
+    .card {
+      background: rgba(255,255,255,.04);
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .card h2 { margin:0 0 12px; font-size:20px; color:#cbd5e1 }
+
+    /* 针对协议与端口模块的修改 */
+    .protocol-port .row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+    }
+    .protocol-port .row label {
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .protocol-port .row input[type="text"] {
+        flex: 1 1 150px;
+        width:auto;
+        padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+        background:#0d1430; color:var(--ink); outline:none;
+    }
+
+    /* 原有的 .row 样式只保留给其他模块使用 */
+    .row:not(.protocol-port .row) { display:grid; grid-template-columns:200px 1fr; gap:12px; align-items:center; margin:8px 0 }
+
+    label { display:flex; align-items:center; gap:10px }
+    input[type="text"], input[type="number"], select {
+      width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+      background:#0d1430; color:var(--ink); outline:none;
+    }
+    input[disabled]{opacity:.5}
+    .switch {
+      position:relative; width:48px; height:28px; background:#263255; border-radius:99px; cursor:pointer; transition:.2s;
+    }
+    .switch::after {
+      content:""; position:absolute; inset:3px auto 3px 3px; width:22px; border-radius:50%; background:white; transition:.2s;
+    }
+    .switch.on { background:var(--acc) }
+    .switch.on::after { left:auto; right:3px }
+    .pill {
+      display:inline-block; font-size:12px; padding:2px 8px; border:1px solid var(--line);
+      border-radius:999px; color:#cbd5e1; margin-left:6px;
+    }
+    .actions {
+      display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;
+    }
+    button {
+      cursor:pointer; border:1px solid var(--line);
+      background:linear-gradient(180deg,#1a2346,#121a39);
+      color:var(--ink); padding:10px 14px; border-radius:12px;
+    }
+    button.primary {
+      background:linear-gradient(180deg,#4f7cff,#385fdf);
+      border-color:#476de2;
+    }
+    button.ghost { background:transparent }
+    .out { position:relative }
+    textarea {
+      width:100%; min-height:130px; background:#0a1128; color:#dbeafe;
+      border:1px dashed #3752a6; border-radius:12px; padding:12px; white-space:pre; resize:vertical;
+    }
+    .tabs {
+      display:flex; gap:8px; margin:0 0 12px;
+    }
+    .tab {
+      padding:8px 10px; border-radius:10px; border:1px solid var(--line);
+      color:var(--sub); cursor:pointer;
+    }
+    .tab.active {
+      border-color:#5a73c9; color:var(--ink); background:rgba(79,124,255,.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>ArgoSB小钢炮💣一键命令生成器</h1>
+      <p>
+        甬哥ArgoSB项目：
+        <a href="https://github.com/yonggekkk/ArgoSB" target="_blank">github.com/yonggekkk/ArgoSB</a><br>
+        甬哥Blogger博客：
+        <a href="https://ygkkk.blogspot.com" target="_blank">ygkkk.blogspot.com</a><br>
+        甬哥YouTube频道：
+        <a href="https://www.youtube.com/@ygkkk" target="_blank">www.youtube.com/@ygkkk</a><br>
+      </p>
+    </header>
+
+    <div class="grid">
+      <section class="card protocol-port">
+        <h2>选择的协议与端口</h2>
+        <div class="row">
+          <label><input type="checkbox" data-proto="vmpt"> Vmess-ws <span class="pill">vmpt</span></label><input type="text" placeholder="留空则随机端口（Argo固定隧道必须填写端口）" data-port="vmpt">
+          <label><input type="checkbox" data-proto="vlpt"> Vless-Reality-Vision <span class="pill">vlpt</span></label><input type="text" placeholder="留空则随机端口" data-port="vlpt">
+          <label><input type="checkbox" data-proto="xhpt"> Vless-Xhttp-Reality <span class="pill">xhpt</span></label><input type="text" placeholder="留空则随机端口" data-port="xhpt">
+          <label><input type="checkbox" data-proto="anpt"> AnyTLS <span class="pill">anpt</span></label><input type="text" placeholder="留空则随机端口" data-port="anpt">
+          <label><input type="checkbox" data-proto="hypt"> Hysteria2 <span class="pill">hypt</span></label><input type="text" placeholder="留空则随机端口" data-port="hypt">
+          <label><input type="checkbox" data-proto="tupt"> Tuic <span class="pill">tupt</span></label><input type="text" placeholder="留空则随机端口" data-port="tupt">
+          <label><input type="checkbox" data-proto="sspt"> Shadowsocks-2022 <span class="pill">sspt</span></label><input type="text" placeholder="留空则随机端口" data-port="sspt">
+        </div>
+      </section>
+
+      <section class="card outbound-warp">
+        <h2>配置参数 </h2>
+        <div class="row"><label>UUID 密码 <span class="pill">uuid</span></label><input id="uuid" type="text" placeholder="留空则随机生成uuid密码"/></div>
+        <div class="row"><label>Reality 域名 <span class="pill">reym</span></label><input id="reym" type="text" placeholder="留空则默认www.yahoo.com"/></div>
+        <div class="row"><label>WARP 全局出站 <span class="pill">warp</span></label>
+          <select id="warp">
+            <option value="">默认 服务器本地IP出站</option>
+            <option value="s">仅 Sing-box全局WARP</option>
+            <option value="x">仅 Xray全局WARP</option>
+            <option value="both">Sing-box + Xray全局WARP</option>
+          </select>
+        </div>
+        <div class="row"><label>IPv4/IPv6 出站优先 <span class="pill">ipyx</span></label>
+          <select id="ipyx">
+            <option value="">默认 自动</option>
+            <option value="46">IPv4 优先</option>
+            <option value="64">IPv6 优先</option>
+            <option value="4">仅 IPv4</option>
+            <option value="6">仅 IPv6</option>
+          </select>
+        </div>
+        <div class="row"><label>IPv4/IPv6 配置导出 <span class="pill">ippz</span></label>
+          <select id="ippz">
+            <option value="">默认 自动</option>
+            <option value="4">导出 IPv4</option>
+            <option value="6">导出 IPv6</option>
+          </select>
+        </div>
+        <div class="row"><label>导出节点名称前缀 <span class="pill">name</span></label><input id="name" type="text" placeholder="留空则默认协议名前缀"/></div>
+      </section>
+
+      <section class="card argo-tunnel">
+        <h2>Argo隧道（Vmess-ws协议自动激活）</h2>
+        <div class="row">
+          <label>启用Argo <span class="pill">argo</span></label>
+          <div id="argoBtn" class="switch" role="switch" aria-checked="false"></div>
+        </div>
+        <div class="row"><label>固定隧道CF域名 <span class="pill">agn</span></label><input id="agn" type="text" placeholder="解析在CF的域名，留空则临时隧道" disabled></div>
+        <div class="row"><label>固定隧道Token <span class="pill">agk</span></label><input id="agk" type="text" placeholder="ey开头的秘钥，留空则临时隧道" disabled></div>
+      </section>
+
+      <section class="card out">
+        <div class="tabs">
+          <h2>进入服务器的SSH界面，复制下方生成的一键脚本命令，回车一次搞定</h2>
+        </div>
+        <textarea id="output" spellcheck="false"></textarea>
+        <div class="actions">
+          <button id="reset">重置</button>
+          <button id="copy">复制</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const CURL = 'bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh)';
+  const protoKeys = ['vmpt','vlpt','xhpt','anpt','hypt','tupt','sspt'];
+  const optIds = ['warp','ippz','ipyx','uuid','reym','name'];
+  const argoSwitch = document.getElementById('argoBtn');
+  const agn = document.getElementById('agn');
+  const agk = document.getElementById('agk');
+  const vmessWsCheckbox = document.querySelector('[data-proto="vmpt"]');
+
+  function updateArgoState(isEnabled) {
+    argoSwitch.classList.toggle('on', isEnabled);
+    argoSwitch.setAttribute('aria-checked', isEnabled ? 'true' : 'false');
+    [agn, agk].forEach(i => i.disabled = !isEnabled);
+    render();
+  }
+
+  argoSwitch.addEventListener('click', () => {
+    const on = !argoSwitch.classList.contains('on');
+    if (on) {
+      vmessWsCheckbox.checked = true;
+    }
+    updateArgoState(on);
+    render();
+  });
+
+  vmessWsCheckbox.addEventListener('change', () => {
+    if (!vmessWsCheckbox.checked) {
+      updateArgoState(false);
+    }
+    render();
+  });
+
+  document.querySelectorAll('[data-port]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const key = inp.getAttribute('data-port');
+      const ck = document.querySelector(`[data-proto="${key}"]`);
+      if (!ck) return;
+      if (inp.value.trim() !== '' && !ck.checked) {
+        ck.checked = true;
+      }
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-proto]').forEach(ck => {
+    ck.addEventListener('change', () => {
+      if (ck.getAttribute('data-proto') === 'vmpt' && !ck.checked) {
+        updateArgoState(false);
+      }
+      render();
+    });
+  });
+
+  function collectVars(){
+    const m = {};
+    protoKeys.forEach(k => {
+      const ck = document.querySelector(`[data-proto="${k}"]`);
+      const pt = document.querySelector(`[data-port="${k}"]`);
+      if (ck && ck.checked) {
+        const v = (pt.value || '').trim();
+        m[k] = v;
+      }
+    });
+    optIds.forEach(id => {
+      const el = document.getElementById(id);
+      const v = (el.value || '').trim();
+      if (id === 'warp' && v === 'both') {
+        m[id] = '';
+      } else if (v !== '') {
+        m[id] = v;
+      }
+    });
+    if (argoSwitch.classList.contains('on')) {
+      m['argo'] = 'y';
+      const _agn = (agn.value || '').trim();
+      const _agk = (agk.value || '').trim();
+      if (_agn) m['agn'] = _agn;
+      if (_agk) m['agk'] = _agk;
+    }
+    return m;
+  }
+
+  function toBashVars(m){
+    const keys = Object.keys(m);
+    const ordered = [];
+    protoKeys.forEach(k => { if (keys.includes(k)) ordered.push(k); });
+    ['warp', 'uuid', 'reym', 'name', 'ippz', 'ipyx'].forEach(k => { if (keys.includes(k)) ordered.push(k); });
+    if (keys.includes('argo')) ordered.push('argo');
+    ['agn', 'agk'].forEach(k => { if (keys.includes(k)) ordered.push(k); });
+    keys.forEach(k => { if (!ordered.includes(k)) ordered.push(k); });
+
+    return ordered.map(k => {
+      const val = m[k];
+      if (val === '') return `${k}=""`;
+      if (/[^\w\-\.:/]/.test(val)) {
+        return `${k}="${val.replace(/"/g, '\\"')}"`;
+      }
+      return `${k}="${val}"`;
+    }).join(' ');
+  }
+
+  function render(){
+    const m = collectVars();
+    const out = document.getElementById('output');
+    const vars = toBashVars(m);
+    out.value = (vars ? vars + ' ' : '') + CURL;
+  }
+
+  render();
+
+  document.querySelectorAll('input,select').forEach(el => {
+    el.addEventListener('input', render);
+    el.addEventListener('change', render);
+  });
+
+  document.getElementById('copy').addEventListener('click', async () => {
+    const t = document.getElementById('output');
+    t.select(); t.setSelectionRange(0, 99999);
+    try { await navigator.clipboard.writeText(t.value); showToast('已复制到剪贴板'); } catch (e) { document.execCommand('copy'); showToast('已复制'); }
+  });
+
+  document.getElementById('reset').addEventListener('click', () => { location.reload(); });
+
+  function showToast(msg) {
+    const d = document.createElement('div');
+    d.textContent = msg; d.style.position = 'fixed'; d.style.left = '50%'; d.style.top = '20px'; d.style.transform = 'translateX(-50%)';
+    d.style.padding = '10px 14px'; d.style.background = 'rgba(0,0,0,.6)'; d.style.color = '#fff'; d.style.border = '1px solid #334155'; d.style.borderRadius = '10px'; d.style.zIndex = 9999;
+    document.body.appendChild(d); setTimeout(() => d.remove(), 1400);
+  }
+})();
+</script>
+</body>
+</html>
