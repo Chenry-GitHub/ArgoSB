@@ -265,6 +265,7 @@
   const allInputs = document.querySelectorAll('input, select');
   const checkboxes = document.querySelectorAll('input[type="checkbox"]');
   const textInputs = document.querySelectorAll('input[type="text"]');
+  const ippzSelect = document.getElementById('ippz');
 
   function updateArgoState(isEnabled) {
     argoSwitch.classList.toggle('on', isEnabled);
@@ -273,8 +274,8 @@
     render();
   }
 
-  // New function to reset all form inputs to their default state
-  function resetForm() {
+  // Modified function to reset all form inputs to their default state
+  function resetForm(preserveIppz = false) {
     checkboxes.forEach(cb => {
         cb.checked = false;
     });
@@ -283,7 +284,10 @@
     });
     document.getElementById('warp').value = '';
     document.getElementById('ipyx').value = '';
-    document.getElementById('ippz').value = '';
+    // Preserve ippz if the flag is true
+    if (!preserveIppz) {
+        ippzSelect.value = '';
+    }
     document.getElementById('uuid').value = '';
     document.getElementById('reym').value = '';
     document.getElementById('name').value = '';
@@ -390,14 +394,28 @@
   document.querySelectorAll('.command-button').forEach(btn => {
     btn.addEventListener('click', () => {
       const command = btn.getAttribute('data-command');
+      // Check if ippz is set to "4" or "6" before clearing
+      const ippzValue = ippzSelect.value;
+      const shouldPreserveIppz = (command === 'list' && (ippzValue === '4' || ippzValue === '6'));
+
       if (command === 'rep') {
         const m = collectVars();
         const vars = toBashVars(m);
         output.value = (vars ? vars + ' ' : '') + CURL + ' rep';
       } else {
-        // Reset the form for list, del, and res commands
-        resetForm();
-        output.value = `${CURL} ${command}`;
+        // Pass the flag to resetForm
+        resetForm(shouldPreserveIppz);
+        // If ippz should be preserved, set its value back
+        if (shouldPreserveIppz) {
+          ippzSelect.value = ippzValue;
+          // Re-render the command with the preserved ippz value
+          const m = collectVars();
+          m['ippz'] = ippzValue;
+          const vars = toBashVars(m);
+          output.value = `${vars} ${CURL} ${command}`;
+        } else {
+          output.value = `${CURL} ${command}`;
+        }
       }
     });
   });
@@ -420,6 +438,3 @@
 </script>
 </body>
 </html>
-
-
-
