@@ -52,7 +52,8 @@
     .protocol-port { grid-column: 1; grid-row: 1 / 3; }
     .outbound-warp { grid-column: 2; grid-row: 1; }
     .argo-tunnel { grid-column: 2; grid-row: 2; }
-    .out { grid-column: 1 / 3; grid-row: 3; }
+    .shortcut-commands-card { grid-column: 1 / 3; grid-row: 3; }
+    .out { grid-column: 1 / 3; grid-row: 4; }
 
     .card {
       background: rgba(255,255,255,.04);
@@ -132,6 +133,31 @@
     .tab.active {
       border-color:#5a73c9; color:var(--ink); background:rgba(79,124,255,.15);
     }
+    
+    /* 新增的快捷方式命令组的样式 */
+    .shortcut-commands-content {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .shortcut-commands-content p {
+        margin: 0;
+        white-space: nowrap;
+    }
+    .shortcut-commands-content .command-button {
+      background: #1a2346;
+      color: var(--ink);
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .shortcut-commands-content .command-button:hover {
+      background: #263255;
+    }
   </style>
 </head>
 <body>
@@ -150,7 +176,7 @@
 
     <div class="grid">
       <section class="card protocol-port">
-        <h2>选择的协议与端口</h2>
+        <h2>选择的协议与端口：</h2>
         <div class="row">
           <label><input type="checkbox" data-proto="vmpt"> Vmess-ws <span class="pill">vmpt</span></label><input type="text" placeholder="留空则随机端口（Argo固定隧道必须填写端口）" data-port="vmpt">
           <label><input type="checkbox" data-proto="vlpt"> Vless-Reality-Vision <span class="pill">vlpt</span></label><input type="text" placeholder="留空则随机端口" data-port="vlpt">
@@ -163,15 +189,15 @@
       </section>
 
       <section class="card outbound-warp">
-        <h2>配置参数 </h2>
+        <h2>配置参数： </h2>
         <div class="row"><label>UUID 密码 <span class="pill">uuid</span></label><input id="uuid" type="text" placeholder="留空则随机生成uuid密码"/></div>
         <div class="row"><label>Reality 域名 <span class="pill">reym</span></label><input id="reym" type="text" placeholder="留空则默认www.yahoo.com"/></div>
         <div class="row"><label>WARP 全局出站 <span class="pill">warp</span></label>
           <select id="warp">
             <option value="">默认 服务器本地IP出站</option>
-            <option value="s">仅 Sing-box全局WARP</option>
-            <option value="x">仅 Xray全局WARP</option>
-            <option value="both">Sing-box + Xray全局WARP</option>
+            <option value="s">仅 Sing-box全局WARP出站</option>
+            <option value="x">仅 Xray全局WARP出站</option>
+            <option value="both">Sing-box + Xray全局WARP出站</option>
           </select>
         </div>
         <div class="row"><label>IPv4/IPv6 出站优先 <span class="pill">ipyx</span></label>
@@ -194,13 +220,23 @@
       </section>
 
       <section class="card argo-tunnel">
-        <h2>Argo隧道（Vmess-ws协议自动激活）</h2>
+        <h2>Argo隧道（Vmess-ws协议自动激活）：</h2>
         <div class="row">
           <label>启用Argo <span class="pill">argo</span></label>
           <div id="argoBtn" class="switch" role="switch" aria-checked="false"></div>
         </div>
         <div class="row"><label>固定隧道CF域名 <span class="pill">agn</span></label><input id="agn" type="text" placeholder="解析在CF的域名，留空则临时隧道" disabled></div>
         <div class="row"><label>固定隧道Token <span class="pill">agk</span></label><input id="agk" type="text" placeholder="ey开头的秘钥，留空则临时隧道" disabled></div>
+      </section>
+
+      <section class="card shortcut-commands-card">
+        <h2>已安装后的快捷方式：</h2>
+        <div class="shortcut-commands-content">
+          <button class="command-button" data-command="list">节点显示命令：list</button>
+          <button class="command-button" data-command="del">卸载脚本命令：del</button>
+          <button class="command-button" data-command="res">重启脚本命令：res</button>
+          <button class="command-button" data-command="rep">更换变量命令（注:先设好变量再点击）：rep</button>
+        </div>
       </section>
 
       <section class="card out">
@@ -225,6 +261,10 @@
   const agn = document.getElementById('agn');
   const agk = document.getElementById('agk');
   const vmessWsCheckbox = document.querySelector('[data-proto="vmpt"]');
+  const output = document.getElementById('output');
+  const allInputs = document.querySelectorAll('input, select');
+  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+  const textInputs = document.querySelectorAll('input[type="text"]');
 
   function updateArgoState(isEnabled) {
     argoSwitch.classList.toggle('on', isEnabled);
@@ -233,13 +273,29 @@
     render();
   }
 
+  // New function to reset all form inputs to their default state
+  function resetForm() {
+    checkboxes.forEach(cb => {
+        cb.checked = false;
+    });
+    textInputs.forEach(inp => {
+        inp.value = '';
+    });
+    document.getElementById('warp').value = '';
+    document.getElementById('ipyx').value = '';
+    document.getElementById('ippz').value = '';
+    document.getElementById('uuid').value = '';
+    document.getElementById('reym').value = '';
+    document.getElementById('name').value = '';
+    updateArgoState(false);
+  }
+
   argoSwitch.addEventListener('click', () => {
     const on = !argoSwitch.classList.contains('on');
     if (on) {
       vmessWsCheckbox.checked = true;
     }
     updateArgoState(on);
-    render();
   });
 
   vmessWsCheckbox.addEventListener('change', () => {
@@ -320,16 +376,30 @@
 
   function render(){
     const m = collectVars();
-    const out = document.getElementById('output');
     const vars = toBashVars(m);
-    out.value = (vars ? vars + ' ' : '') + CURL;
+    output.value = (vars ? vars + ' ' : '') + CURL;
   }
 
   render();
 
-  document.querySelectorAll('input,select').forEach(el => {
+  allInputs.forEach(el => {
     el.addEventListener('input', render);
     el.addEventListener('change', render);
+  });
+  
+  document.querySelectorAll('.command-button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const command = btn.getAttribute('data-command');
+      if (command === 'rep') {
+        const m = collectVars();
+        const vars = toBashVars(m);
+        output.value = (vars ? vars + ' ' : '') + CURL + ' rep';
+      } else {
+        // Reset the form for list, del, and res commands
+        resetForm();
+        output.value = `${CURL} ${command}`;
+      }
+    });
   });
 
   document.getElementById('copy').addEventListener('click', async () => {
