@@ -445,10 +445,11 @@ if [ -z "$port_vm_ws" ]; then
 port_vm_ws=$(shuf -i 10000-65535 -n 1)
 fi
 echo "$port_vm_ws" > "$HOME/agsb/port_vm_ws"
+echo "Vmess-ws端口：$port_vm_ws"
 if [ -n "$cdnym" ]; then
 echo "$cdnym" > "$HOME/agsb/cdnym"
+echo "80系CDN或者回源CDN的host域名(已托管在CF)：$cdnym"
 fi
-echo "Vmess-ws端口：$port_vm_ws"
 if [ -e "$HOME/agsb/xray" ]; then
 cat >> "$HOME/agsb/xr.json" <<EOF
         {
@@ -832,8 +833,8 @@ echo "$vm_link" >> "$HOME/agsb/jh.txt"
 echo "$vm_link"
 echo
 if [ -f "$HOME/agsb/cdnym" ]; then
-echo "💣【 vmess-ws 】80系或者回源CDN节点信息如下："
-echo "注：优选IP或者端口可自行手动修改"
+echo "💣【 vmess-ws 】80系CDN或者回源CDN节点信息如下："
+echo "注：优选IP地址或者端口可自行手动修改"
 vm_cdn_link="vmess://$(echo "{ \"v\": \"2\", \"ps\": \"${sxname}vm-ws-cdn-$hostname\", \"add\": \"104.16.0.0\", \"port\": \"80\", \"id\": \"$uuid\", \"aid\": \"0\", \"scy\": \"auto\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"$vmcdnym\", \"path\": \"/$uuid-vm?ed=2048\", \"tls\": \"\"}" | base64 -w0)"
 echo "$vm_cdn_link" >> "$HOME/agsb/jh.txt"
 echo "$vm_cdn_link"
