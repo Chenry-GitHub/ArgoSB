@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ArgoSB一键命令生成器</title>
+  <title>ArgoSB一键bash命令生成器</title>
   <style>
     :root{--bg:#0b1020;--card:#121831;--ink:#e9edf7;--sub:#b7c1d9;--line:#263255;--acc:#4f7cff;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444}
     *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0b1020 0%,#0e1530 100%);color:var(--ink);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
@@ -27,11 +27,11 @@
       margin-right: auto;
       text-align: left; /* 确保 p 标签内的文本左对齐 */
     }
-    header a {
+    a {
       color: var(--acc);
       text-decoration: none;
     }
-    header a:hover {
+    a:hover {
       text-decoration: underline;
     }
 
@@ -163,10 +163,10 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>ArgoSB小钢炮💣一键命令生成器 V25.8.12</h1>
+      <h1>ArgoSB小钢炮💣一键bash命令生成器 V25.8.12</h1>
       <p>
-        甬哥ArgoSB项目：
-        <a href="https://github.com/yonggekkk/ArgoSB" target="_blank">github.com/yonggekkk/ArgoSB</a><br>
+        甬哥Github项目：
+        <a href="https://github.com/yonggekkk" target="_blank">github.com/yonggekkk</a><br>
         甬哥Blogger博客：
         <a href="https://ygkkk.blogspot.com" target="_blank">ygkkk.blogspot.com</a><br>
         甬哥YouTube频道：
@@ -192,6 +192,7 @@
         <h2>配置参数： </h2>
         <div class="row"><label>UUID 密码 <span class="pill">uuid</span></label><input id="uuid" type="text" placeholder="留空则随机生成uuid密码"/></div>
         <div class="row"><label>Reality 域名 <span class="pill">reym</span></label><input id="reym" type="text" placeholder="留空则默认www.yahoo.com"/></div>
+        <div class="row"><label>客户端host地址<span class="pill">cdnym</span></label><input id="cdnym" type="text" placeholder="仅Vmess-ws可用，CF解析域名开启CDN" disabled/></div>
         <div class="row"><label>WARP 全局出站 <span class="pill">warp</span></label>
           <select id="warp">
             <option value="">默认 服务器本地IP出站</option>
@@ -230,7 +231,7 @@
       </section>
 
       <section class="card shortcut-commands-card">
-        <h2>脚本安装完成后，可用的快捷方式：</h2>
+        <h2>如已安装脚本，可用以下四个的快捷方式：</h2>
         <div class="shortcut-commands-content">
           <button class="command-button" data-command="list">节点显示命令：list</button>
           <button class="command-button" data-command="del">卸载脚本命令：del</button>
@@ -248,19 +249,24 @@
           <button id="reset">重置</button>
           <button id="copy">复制</button>
         </div>
+        <p style="margin-top: 10px;">相关操作及视频教程说明，请参考ArgoSB脚本项目：<a href="https://github.com/yonggekkk/ArgoSB" target="_blank">github.com/yonggekkk/ArgoSB</a></p>
       </section>
     </div>
   </div>
+
+
+
 
 <script>
 (function(){
   const CURL = 'bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh)';
   const protoKeys = ['vmpt','vlpt','xhpt','anpt','hypt','tupt','sspt'];
-  const optIds = ['warp','ippz','ipyx','uuid','reym','name'];
+  const optIds = ['warp','ippz','ipyx','uuid','reym','cdnym','name'];
   const argoSwitch = document.getElementById('argoBtn');
   const agn = document.getElementById('agn');
   const agk = document.getElementById('agk');
   const vmessWsCheckbox = document.querySelector('[data-proto="vmpt"]');
+  const cdnymInput = document.getElementById('cdnym');
   const output = document.getElementById('output');
   const allInputs = document.querySelectorAll('input, select');
   const checkboxes = document.querySelectorAll('input[type="checkbox"]');
@@ -292,6 +298,16 @@
     document.getElementById('reym').value = '';
     document.getElementById('name').value = '';
     updateArgoState(false);
+    updateCdnymState(); // Call updateCdnymState on reset
+  }
+
+  function updateCdnymState() {
+      const isVmessWsChecked = vmessWsCheckbox.checked;
+      cdnymInput.disabled = !isVmessWsChecked;
+      if (!isVmessWsChecked) {
+          cdnymInput.value = '';
+      }
+      render();
   }
 
   argoSwitch.addEventListener('click', () => {
@@ -300,12 +316,14 @@
       vmessWsCheckbox.checked = true;
     }
     updateArgoState(on);
+    updateCdnymState();
   });
 
   vmessWsCheckbox.addEventListener('change', () => {
     if (!vmessWsCheckbox.checked) {
       updateArgoState(false);
     }
+    updateCdnymState();
     render();
   });
 
@@ -323,8 +341,11 @@
 
   document.querySelectorAll('[data-proto]').forEach(ck => {
     ck.addEventListener('change', () => {
-      if (ck.getAttribute('data-proto') === 'vmpt' && !ck.checked) {
-        updateArgoState(false);
+      if (ck.getAttribute('data-proto') === 'vmpt') {
+        if (!ck.checked) {
+          updateArgoState(false);
+        }
+        updateCdnymState();
       }
       render();
     });
@@ -345,7 +366,7 @@
       const v = (el.value || '').trim();
       if (id === 'warp' && v === 'both') {
         m[id] = '';
-      } else if (v !== '') {
+      } else if (v !== '' && !el.disabled) {
         m[id] = v;
       }
     });
@@ -363,7 +384,7 @@
     const keys = Object.keys(m);
     const ordered = [];
     protoKeys.forEach(k => { if (keys.includes(k)) ordered.push(k); });
-    ['warp', 'uuid', 'reym', 'name', 'ippz', 'ipyx'].forEach(k => { if (keys.includes(k)) ordered.push(k); });
+    ['warp', 'uuid', 'reym', 'cdnym', 'name', 'ippz', 'ipyx'].forEach(k => { if (keys.includes(k)) ordered.push(k); });
     if (keys.includes('argo')) ordered.push('argo');
     ['agn', 'agk'].forEach(k => { if (keys.includes(k)) ordered.push(k); });
     keys.forEach(k => { if (!ordered.includes(k)) ordered.push(k); });
@@ -384,6 +405,7 @@
     output.value = (vars ? vars + ' ' : '') + CURL;
   }
 
+  updateCdnymState();
   render();
 
   allInputs.forEach(el => {
@@ -394,7 +416,6 @@
   document.querySelectorAll('.command-button').forEach(btn => {
     btn.addEventListener('click', () => {
       const command = btn.getAttribute('data-command');
-      // Check if ippz is set to "4" or "6" before clearing
       const ippzValue = ippzSelect.value;
       const shouldPreserveIppz = (command === 'list' && (ippzValue === '4' || ippzValue === '6'));
 
@@ -403,12 +424,9 @@
         const vars = toBashVars(m);
         output.value = (vars ? vars + ' ' : '') + CURL + ' rep';
       } else {
-        // Pass the flag to resetForm
         resetForm(shouldPreserveIppz);
-        // If ippz should be preserved, set its value back
         if (shouldPreserveIppz) {
           ippzSelect.value = ippzValue;
-          // Re-render the command with the preserved ippz value
           const m = collectVars();
           m['ippz'] = ippzValue;
           const vars = toBashVars(m);
@@ -438,4 +456,3 @@
 </script>
 </body>
 </html>
-
