@@ -49,7 +49,7 @@ echo "甬哥Github项目 ：github.com/yonggekkk"
 echo "甬哥Blogger博客 ：ygkkk.blogspot.com"
 echo "甬哥YouTube频道 ：www.youtube.com/@ygkkk"
 echo "ArgoSB一键无交互小钢炮脚本💣"
-echo "当前版本：V25.8.8"
+echo "当前版本：V25.8.18"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 hostname=$(uname -a | awk '{print $2}')
 op=$(cat /etc/redhat-release 2>/dev/null || cat /etc/os-release 2>/dev/null | grep -i pretty_name | cut -d \" -f2)
@@ -287,8 +287,10 @@ vlp=vlptargo
 fi
 if [ -n "$ssp" ]; then
 ssp=sspt
+if [ ! -e "$HOME/agsb/sskey" ]; then
 sskey=$(head -c 16 /dev/urandom | base64 -w0)
 echo "$sskey" > "$HOME/agsb/sskey"
+fi
 if [ -z "$port_ss" ]; then
 port_ss=$(shuf -i 10000-65535 -n 1)
 fi
@@ -791,7 +793,7 @@ echo "*********************************************************"
 echo "ArgoSB脚本输出节点配置如下："
 echo
 case "$server_ip" in
-104.28*|\[2a09*) echo "检测到有WARP的IP作为客户端地址 (104.28或者2a09开头的IP)，请在客户端上把WARP的IP手动更换为VPS本地IPV4或者IPV6地址" && sleep 3 ;;
+104.28*|\[2a09*) echo "检测到有WARP的IP作为客户端地址 (104.28或者2a09开头的IP)，请把客户端地址上的WARP的IP手动更换为VPS本地IPV4或者IPV6地址" && sleep 3 ;;
 esac
 echo
 if [ -e "$HOME/agsb/xray" ]; then
@@ -844,7 +846,7 @@ fi
 if [ -f "$HOME/agsb/port_an" ]; then
 echo "💣【 AnyTLS 】节点信息如下："
 port_an=$(cat "$HOME/agsb/port_an")
-an_link="anytls://$uuid@$server_ip:$port_an?insecure=1#${sxname}anytls-$hostname"
+an_link="anytls://$uuid@$server_ip:$port_an?insecure=1&allowInsecure=1#${sxname}anytls-$hostname"
 echo "$an_link" >> "$HOME/agsb/jh.txt"
 echo "$an_link"
 echo
@@ -860,7 +862,7 @@ fi
 if [ -f "$HOME/agsb/port_tu" ]; then
 echo "💣【 Tuic 】节点信息如下："
 port_tu=$(cat "$HOME/agsb/port_tu")
-tuic5_link="tuic://$uuid:$uuid@$server_ip:$port_tu?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=www.bing.com&allow_insecure=1#${sxname}tuic-$hostname"
+tuic5_link="tuic://$uuid:$uuid@$server_ip:$port_tu?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=www.bing.com&allow_insecure=1&allowInsecure=1#${sxname}tuic-$hostname"
 echo "$tuic5_link" >> "$HOME/agsb/jh.txt"
 echo "$tuic5_link"
 echo
@@ -932,7 +934,7 @@ showmode
 exit
 elif [ "$1" = "rep" ]; then
 cleandel
-find "$HOME/agsb" -mindepth 1 -not -name sing-box -not -name xray -not -name cloudflared -exec rm -rf {} +
+find "$HOME/agsb" -mindepth 1 \( -name sing-box -o -name xray -o -name cloudflared -o -name sskey -o -name xrk \) -prune -o -exec rm -rf {} +
 echo "ArgoSB重置协议完成，开始更新相关协议变量……" && sleep 3
 echo
 elif [ "$1" = "list" ]; then
